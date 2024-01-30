@@ -73,7 +73,7 @@ jobs:
 
       - name: Get the current date and time
         id: datetime
-        run: echo "::set-output name=datetime::$(date +'%Y-%m-%d-%H-%M-%S')"
+        run: echo "::set-output name=datetime::$(date +'%Y%m%d.%H%M%S')"
 
       - name: Create and Upload Release
         uses: ncipollo/release-action@v1
