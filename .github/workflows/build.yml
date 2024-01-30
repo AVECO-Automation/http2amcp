@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-release:
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -43,7 +43,7 @@ jobs:
         path: target/${{ matrix.target }}/release/${{ matrix.binary_name }}
 
 
-  create-release-and-upload-assets:
+  create-release:
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
