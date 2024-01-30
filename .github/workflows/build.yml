@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -32,46 +32,17 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Upload artifact for release
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.binary_name }}
-          path: target/${{ matrix.target }}/release/${{ matrix.binary_name }}
+      - name: Get the current date and time
+        id: datetime
+        run: echo "::set-output name=datetime::$(date +'%Y%m%d.%H%M')"
 
-  create-release-and-upload-assets:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    steps:
-      - name: Get the current date
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y%m%d.%H%M')"
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v2
+      - name: Create and Upload Release
+        if: matrix.os == 'ubuntu-latest'
+        uses: ncipollo/release-action@v1
         with:
-          path: artifacts
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.date.outputs.date }}
-          release_name: ${{ steps.date.outputs.date }}
+          artifacts: "target/${{ matrix.target }}/release/${{ matrix.binary_name }}"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: release-${{ steps.datetime.outputs.datetime }}
+          name: Release ${{ steps.datetime.outputs.datetime }}
           draft: false
           prerelease: false
-
-      - name: Upload release assets
-        run: |
-          for file in artifacts/*; do
-            asset_name=$(basename "$file")
-            echo "Uploading $asset_name"
-            curl \
-              -X POST \
-              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Content-Type: application/octet-stream" \
-              --data-binary @"$file" \
-              "${{ steps.create_release.outputs.upload_url }}?name=${asset_name}"
-          done
