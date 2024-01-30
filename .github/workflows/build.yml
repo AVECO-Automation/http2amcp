@@ -20,9 +20,12 @@ jobs:
           override: true
       - name: Build
         run: cargo build --release --target x86_64-unknown-linux-gnu
-      - name: Set artifact name
-        id: set-artifact-name
-        run: echo "::set-output name=artifact-name::http2amcp-linux"
+      - name: Upload Linux binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: http2amcp-linux
+          path: target/x86_64-unknown-linux-gnu/release/http2amcp
+
 
   build-windows:
     runs-on: windows-latest
@@ -39,27 +42,32 @@ jobs:
           override: true
       - name: Build
         run: cargo build --release --target x86_64-pc-windows-msvc
-      - name: Set artifact name
-        id: set-artifact-name
-        run: echo "::set-output name=artifact-name::http2amcp-windows.exe"
+      - name: Upload Windows binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: http2amcp-windows
+          path: target/x86_64-pc-windows-msvc/release/http2amcp.exe
+
 
   create-release:
     needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
     steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+
       - name: Get the current date and time
         id: datetime
-        run: echo "::set-output name=datetime::$(date +'%Y-%m-%d-%H-%M-%S')"
+        run: echo "::set-output name=datetime::$(date +'%Y%m%d.%H%M')"
 
       - name: Create and Upload Release
         uses: ncipollo/release-action@v1
         with:
           artifacts: |
-            target/x86_64-unknown-linux-gnu/release/http2amcp-linux
-            target/x86_64-pc-windows-msvc/release/http2amcp-windows.exe
+            artifacts/http2amcp-linux
+            artifacts/http2amcp-windows.exe
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: release-${{ steps.datetime.outputs.datetime }}
-          name: Release ${{ steps.datetime.outputs.datetime }}
-          draft: false
-          prerelease: false
-
+          name: ${{ steps.datetime.outputs.datetime }}
