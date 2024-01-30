@@ -1,5 +1,9 @@
 [package]
 name = "http2amcp"
+description = "HTTP to AMCP bridge"
+authors = ["Martin Wacker <martas@imm.cz>"]
+homepage = "https://github.com/aveco-automation/http2amcp"
+license = "MIT"
 version = "0.1.0"
 edition = "2021"
 
