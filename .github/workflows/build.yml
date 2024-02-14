@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       artifact-name: ${{ steps.set-artifact-name.outputs.artifact-name }}
     steps:
@@ -73,7 +73,7 @@ jobs:
 
       - name: Get the current date and time
         id: datetime
-        run: echo "::set-output name=datetime::$(date +'%Y-%m-%d-%H-%M-%S')"
+        run: echo "::set-output name=datetime::$(date +'%Y%m%d.%H%M%S')"
 
       - name: Create and Upload Release
         uses: ncipollo/release-action@v1
