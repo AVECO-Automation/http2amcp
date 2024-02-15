@@ -5,6 +5,16 @@ on:
     branches: [ main ]
 
 jobs:
+  extract-version:
+    runs-on: ubuntu-latest
+    outputs:
+      cargo_version: ${{ steps.vinfo.outputs.CARGO_VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract version from Cargo.toml
+        id: vinfo
+        run: echo "CARGO_VERSION=$(grep '^version' Cargo.toml | sed 's/version = "\(.*\)"/\1/' | xargs)" >> "$GITHUB_OUTPUT"
+
   build-linux:
     runs-on: ubuntu-20.04
     outputs:
@@ -56,7 +66,7 @@ jobs:
 
 
   create-release:
-    needs: [build-linux, build-windows]
+    needs: [build-linux, build-windows, extract-version]
     runs-on: ubuntu-latest
     steps:
       - name: Download Linux binary artifact
@@ -71,17 +81,15 @@ jobs:
           name: http2amcp-windows
           path: ./artifacts/windows
 
-      - name: Get version from Cargo.toml
-        id: cargo_version
-        run: |
-          echo "::set-output name=version::$(grep '^version' Cargo.toml | sed 's/version = "\(.*\)"/\1/' | xargs)"
-
       - name: Create and Upload Release
         uses: ncipollo/release-action@v1
+        env:
+          CARGO_VERSION: ${{ needs.extract-version.outputs.cargo_version }}
+
         with:
           artifacts: |
             artifacts/linux/http2amcp
             artifacts/windows/http2amcp.exe
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.cargo_version.outputs.version }}
-          name: http2amcp ${{ steps.cargo_version.outputs.version }}
+          tag: $CARGO_VERSION
+          name: http2amcp $CARGO_VERSION
