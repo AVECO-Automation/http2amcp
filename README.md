@@ -1,5 +1,8 @@
 # HTTP2AMCP Proxy
 
+![Build Status](https://github.com/aveco-automation/http2amcp/actions/workflows/build.yml/badge.svg)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 This application acts as a proxy, translating HTTP POST requests 
 into AMCP (Advanced Media Control Protocol) commands for CasparCG servers.
 
