@@ -65,7 +65,7 @@ cargo build --release
 
 ### Running as a systemd service
 
-Copy the binary to /usr/local/bin/http2amcp
+Copy the binary to `/usr/local/bin/http2amcp`
 
 Create a file named `/etc/systemd/system/http2amcp.service` with the following contents:
 
