@@ -33,7 +33,11 @@ Ensure that the necessary environment variables are set or rely on the default v
 Example:
 
 ```bash
+# httpie
 http post http://localhost:9731/amcp --raw "PLAY 1-1 amb"
+
+# curl
+curl -X POST http://localhost:9731/amcp -d "PLAY 1-1 amb"
 ```
 
 ### Response
