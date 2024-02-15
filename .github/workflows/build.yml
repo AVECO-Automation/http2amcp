@@ -71,9 +71,10 @@ jobs:
           name: http2amcp-windows
           path: ./artifacts/windows
 
-      - name: Get the current date and time
-        id: datetime
-        run: echo "::set-output name=datetime::$(date +'%Y%m%d.%H%M%S')"
+      - name: Get version from Cargo.toml
+        id: cargo_version
+        run: |
+          echo "::set-output name=version::$(grep '^version' Cargo.toml | sed 's/version = "\(.*\)"/\1/' | xargs)"
 
       - name: Create and Upload Release
         uses: ncipollo/release-action@v1
@@ -82,5 +83,5 @@ jobs:
             artifacts/linux/http2amcp
             artifacts/windows/http2amcp.exe
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: release-${{ steps.datetime.outputs.datetime }}
-          name: Release ${{ steps.datetime.outputs.datetime }}
+          tag: ${{ steps.cargo_version.outputs.version }}
+          name: http2amcp ${{ steps.cargo_version.outputs.version }}
