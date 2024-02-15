@@ -3,6 +3,8 @@ use std::env;
 use telnet::{Telnet, Event as TelnetEvent};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 
+mod config;
+
 
 /// AMCP response struct
 /// status_code: HTTP status
@@ -111,8 +113,8 @@ async fn send_amcp_command(command: String, host: &str, port: u16) -> AmcpRespon
 /// body: AMCP command to send
 
 async fn amcp_handler(body: String) -> impl Responder {
-    let host = env::var("HTTP2AMCP_AMCP_HOST").unwrap_or("localhost".to_string());
-    let port = env::var("HTTP2AMCP_AMCP_PORT").unwrap_or("5250".to_string()).parse::<u16>().unwrap_or(5250);
+    let host = config::CONFIG.host.clone();
+    let port = config::CONFIG.port;
 
     let amcp_response = send_amcp_command(body, &host, port).await;
     let status_code = actix_web::http::StatusCode::from_u16(amcp_response.status_code).unwrap();
@@ -126,12 +128,9 @@ async fn amcp_handler(body: String) -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
 
-    // Load settings from environment variables
-
-    dotenv::dotenv().ok();
-
-    let log_level = env::var("HTTP2AMCP_LOG_LEVEL").unwrap_or("info".to_string());
-    let server_port = env::var("HTTP2AMCP_SERVER_PORT").unwrap_or("9731".to_string());
+    let log_level = config::CONFIG.log_level.clone();
+    let server_port = config::CONFIG.server_port;
+    let version = env!("CARGO_PKG_VERSION");
 
     // Create logger
 
@@ -150,7 +149,7 @@ async fn main() -> std::io::Result<()> {
 
     // Start HTTP2AMCP server
 
-    info!("Starting HTTP2AMCP server on port {}", server_port);
+    info!("Starting http2amcp {} server on port {}", version, server_port);
 
     HttpServer::new(|| { App::new().route("/amcp", web::post().to(amcp_handler)) })
         .bind(format!("0.0.0.0:{}", server_port))?
