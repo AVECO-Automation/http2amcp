@@ -1,10 +1,9 @@
-use log::{error, info, debug, trace};
-use std::env;
-use telnet::{Telnet, Event as TelnetEvent};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
+use log::{debug, error, info, trace};
+use std::env;
+use telnet::{Event as TelnetEvent, Telnet};
 
 mod config;
-
 
 /// AMCP response struct
 /// status_code: HTTP status
@@ -14,7 +13,6 @@ struct AmcpResponse {
     status_code: u16,
     payload: String,
 }
-
 
 /// Send AMCP command to CasparCG server
 /// command: AMCP command to send
@@ -31,21 +29,24 @@ async fn send_amcp_command(command: String, host: &str, port: u16) -> AmcpRespon
         Ok(conn) => conn,
         Err(_) => {
             error!("Failed to connect to {}:{}", host, port);
-            return AmcpResponse { 
-                status_code: 502, 
-                payload: "Failed to connect to CasparCG server".to_string() 
-            }
+            return AmcpResponse {
+                status_code: 502,
+                payload: "Failed to connect to CasparCG server".to_string(),
+            };
         }
     };
 
     // Append \r\n to command and send it to CasparCG server
     // If sending fails, return 502 Bad Gateway
 
-    if let Err(_) = connection.write(format!("{}\r\n",command).as_bytes()) {
-        error!("Failed to send AMCP command {} to {}:{}", command, host, port);
-        return AmcpResponse { 
-            status_code: 502, 
-            payload: "Failed to send AMCP command to CasparCG server".to_string() 
+    if let Err(_) = connection.write(format!("{}\r\n", command).as_bytes()) {
+        error!(
+            "Failed to send AMCP command {} to {}:{}",
+            command, host, port
+        );
+        return AmcpResponse {
+            status_code: 502,
+            payload: "Failed to send AMCP command to CasparCG server".to_string(),
         };
     }
 
@@ -71,7 +72,7 @@ async fn send_amcp_command(command: String, host: &str, port: u16) -> AmcpRespon
                     if let Some(code) = parsed_code {
                         status_code = Some(code.parse::<u16>().unwrap_or(500));
                     }
-                } 
+                }
 
                 if response.ends_with("\r\n") {
                     if let Some(code) = status_code {
@@ -79,7 +80,7 @@ async fn send_amcp_command(command: String, host: &str, port: u16) -> AmcpRespon
                         // if not, wait for it to arrive
                         if code == 201 && response.matches("\r\n").count() == 1 {
                             trace!("Received 201 OK, waiting for the rest of the response");
-                            continue
+                            continue;
                         }
                     }
 
@@ -89,9 +90,7 @@ async fn send_amcp_command(command: String, host: &str, port: u16) -> AmcpRespon
                     trace!("Received full response {}", status_code.unwrap_or(500));
                     break;
                 }
-
-
-            },
+            }
             Ok(TelnetEvent::TimedOut) | Err(_) => break,
             _ => (),
         }
@@ -100,14 +99,20 @@ async fn send_amcp_command(command: String, host: &str, port: u16) -> AmcpRespon
     // If there are more lines in the response, return them as the payload
     // Otherwise, return the status line as the payload (e.g. "201 OK")
 
-    debug!("Got {} response for AMCP command '{}'", status_code.unwrap_or(500), command);
+    debug!(
+        "Got {} response for AMCP command '{}'",
+        status_code.unwrap_or(500),
+        command
+    );
 
     let lines: Vec<&str> = response.lines().collect();
     let payload = lines[1..].join("\n");
 
-    AmcpResponse { status_code: status_code.unwrap_or(500), payload }
+    AmcpResponse {
+        status_code: status_code.unwrap_or(500),
+        payload,
+    }
 }
-
 
 /// AMCP handler
 /// body: AMCP command to send
@@ -124,10 +129,8 @@ async fn amcp_handler(body: String) -> impl Responder {
         .body(amcp_response.payload)
 }
 
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
     let log_level = config::CONFIG.log_level.clone();
     let server_port = config::CONFIG.server_port;
     let version = env!("CARGO_PKG_VERSION");
@@ -149,9 +152,12 @@ async fn main() -> std::io::Result<()> {
 
     // Start HTTP2AMCP server
 
-    info!("Starting http2amcp {} server on port {}", version, server_port);
+    info!(
+        "Starting http2amcp {} server on port {}",
+        version, server_port
+    );
 
-    HttpServer::new(|| { App::new().route("/amcp", web::post().to(amcp_handler)) })
+    HttpServer::new(|| App::new().route("/amcp", web::post().to(amcp_handler)))
         .bind(format!("0.0.0.0:{}", server_port))?
         .run()
         .await
